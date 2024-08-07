@@ -16,6 +16,7 @@ import (
 	"io"
 	"log"
 	"math"
+	"net"
 	"os"
 	"runtime/debug"
 	"sync/atomic"
@@ -270,10 +271,15 @@ type SocketWrapper struct {
 	SEAL     *SEAL
 
 	HStream *quic.Stream
+	HConn   net.Conn
 }
 
 func (T *SocketWrapper) SetHandshakeStream(s *quic.Stream) {
 	T.HStream = s
+}
+
+func (T *SocketWrapper) SetHandshakeConn(c net.Conn) {
+	T.HConn = c
 }
 
 func NewEncryptionHandler(
@@ -327,8 +333,13 @@ func (T *SocketWrapper) sendPublicKey() (err error) {
 		}
 	}()
 
-	_, err = T.HStream.Write(T.SEAL.PrivateKey.PublicKey().Bytes())
-	T.HStream.Flush()
+	if T.HConn != nil {
+		_, err = T.HConn.Write(T.SEAL.PrivateKey.PublicKey().Bytes())
+	} else {
+		_, err = T.HStream.Write(T.SEAL.PrivateKey.PublicKey().Bytes())
+		T.HStream.Flush()
+	}
+
 	return err
 }
 
@@ -341,7 +352,13 @@ func (T *SocketWrapper) receivePublicKey() (err error) {
 	}()
 
 	PublicKey := make([]byte, math.MaxUint16)
-	n, re := T.HStream.Read(PublicKey)
+	var n int
+	var re error
+	if T.HConn != nil {
+		n, re = T.HConn.Read(PublicKey)
+	} else {
+		n, re = T.HStream.Read(PublicKey)
+	}
 	if re != nil {
 		return re
 	}
