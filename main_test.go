@@ -42,26 +42,26 @@ func createTable() {
 }
 
 func MakeHandlerInvalidPair(et1 EncType, et2 EncType, t *testing.T) (H1 *SocketWrapper, H2 *SocketWrapper) {
-	EH1, err := NewEncryptionHandler(et1)
+	EH1, err := NewEncryptionHandler(et1, X25519)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	PK := EH1.SEAL.PrivateKey.PublicKey().Bytes()
 
-	EH2, err := NewEncryptionHandler(et2)
+	EH2, err := NewEncryptionHandler(et2, X25519)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	EH2.SEAL.PublicKey, err = NewPublicKeyFromBytes(PK)
+	EH2.SEAL.PublicKey, err = EH2.SEAL.NewPublicKeyFromBytes(PK)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	PK2 := EH2.SEAL.PrivateKey.PublicKey().Bytes()
 
-	EH1.SEAL.PublicKey, err = NewPublicKeyFromBytes(PK2)
+	EH1.SEAL.PublicKey, err = EH1.SEAL.NewPublicKeyFromBytes(PK2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,26 +80,26 @@ func MakeHandlerInvalidPair(et1 EncType, et2 EncType, t *testing.T) (H1 *SocketW
 }
 
 func MakeHandlerPair(et EncType, t *testing.T) (H1 *SocketWrapper, H2 *SocketWrapper) {
-	EH1, err := NewEncryptionHandler(et)
+	EH1, err := NewEncryptionHandler(et, X25519)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	PK := EH1.SEAL.PrivateKey.PublicKey().Bytes()
 
-	EH2, err := NewEncryptionHandler(et)
+	EH2, err := NewEncryptionHandler(et, X25519)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	EH2.SEAL.PublicKey, err = NewPublicKeyFromBytes(PK)
+	EH2.SEAL.PublicKey, err = EH2.SEAL.NewPublicKeyFromBytes(PK)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	PK2 := EH2.SEAL.PrivateKey.PublicKey().Bytes()
 
-	EH1.SEAL.PublicKey, err = NewPublicKeyFromBytes(PK2)
+	EH1.SEAL.PublicKey, err = EH1.SEAL.NewPublicKeyFromBytes(PK2)
 	if err != nil {
 		t.Fatal(err)
 	}

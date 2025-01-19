@@ -27,6 +27,13 @@ import (
 	"golang.org/x/net/quic"
 )
 
+type CurveType int
+
+const (
+	P521 CurveType = iota
+	X25519
+)
+
 type EncType int
 
 const (
@@ -37,7 +44,8 @@ const (
 )
 
 type SEAL struct {
-	Created time.Time
+	Created   time.Time
+	CurveType CurveType
 
 	secret1   []byte
 	key1      []byte
@@ -242,23 +250,35 @@ func (S *SEAL) GetSecret1() (err error) {
 }
 
 func (S *SEAL) PublicKeyFromBytes(publicKey []byte) (err error) {
-	S.PublicKey, err = ecdh.X25519().NewPublicKey(publicKey)
+	if S.CurveType == X25519 {
+		S.PublicKey, err = ecdh.X25519().NewPublicKey(publicKey)
+	} else {
+		S.PublicKey, err = ecdh.P521().NewPublicKey(publicKey)
+	}
 	if err != nil {
 		return
 	}
 	return
 }
 
-func NewPrivateKey() (PK *ecdh.PrivateKey, err error) {
-	PK, err = ecdh.X25519().GenerateKey(rand.Reader)
+func (S *SEAL) NewPrivateKey() (PK *ecdh.PrivateKey, err error) {
+	if S.CurveType == X25519 {
+		PK, err = ecdh.X25519().GenerateKey(rand.Reader)
+	} else {
+		PK, err = ecdh.P521().GenerateKey(rand.Reader)
+	}
 	if err != nil {
 		return
 	}
 	return
 }
 
-func NewPublicKeyFromBytes(b []byte) (PK *ecdh.PublicKey, err error) {
-	PK, err = ecdh.X25519().NewPublicKey(b)
+func (S *SEAL) NewPublicKeyFromBytes(b []byte) (PK *ecdh.PublicKey, err error) {
+	if S.CurveType == X25519 {
+		PK, err = ecdh.X25519().NewPublicKey(b)
+	} else {
+		PK, err = ecdh.P521().NewPublicKey(b)
+	}
 	if err != nil {
 		return
 	}
@@ -284,12 +304,14 @@ func (T *SocketWrapper) SetHandshakeConn(c net.Conn) {
 
 func NewEncryptionHandler(
 	encryptionType EncType,
+	curveType CurveType,
 ) (T *SocketWrapper, err error) {
 	T = new(SocketWrapper)
 	T.SEAL = new(SEAL)
+	T.SEAL.CurveType = curveType
 	T.SEAL.Created = time.Now()
 	T.SEAL.Type = encryptionType
-	T.SEAL.PrivateKey, err = NewPrivateKey()
+	T.SEAL.PrivateKey, err = T.SEAL.NewPrivateKey()
 	T.SEAL.Nonce1U.Store(0)
 	T.SEAL.Nonce2U.Store(0)
 	return
@@ -363,7 +385,7 @@ func (T *SocketWrapper) receivePublicKey() (err error) {
 		return re
 	}
 
-	T.SEAL.PublicKey, err = NewPublicKeyFromBytes(PublicKey[:n])
+	T.SEAL.PublicKey, err = T.SEAL.NewPublicKeyFromBytes(PublicKey[:n])
 	return
 }
 
