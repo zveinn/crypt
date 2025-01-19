@@ -242,7 +242,7 @@ func (S *SEAL) GetSecret1() (err error) {
 }
 
 func (S *SEAL) PublicKeyFromBytes(publicKey []byte) (err error) {
-	S.PublicKey, err = ecdh.P521().NewPublicKey(publicKey)
+	S.PublicKey, err = ecdh.X25519().NewPublicKey(publicKey)
 	if err != nil {
 		return
 	}
@@ -250,7 +250,7 @@ func (S *SEAL) PublicKeyFromBytes(publicKey []byte) (err error) {
 }
 
 func NewPrivateKey() (PK *ecdh.PrivateKey, err error) {
-	PK, err = ecdh.P521().GenerateKey(rand.Reader)
+	PK, err = ecdh.X25519().GenerateKey(rand.Reader)
 	if err != nil {
 		return
 	}
@@ -258,7 +258,7 @@ func NewPrivateKey() (PK *ecdh.PrivateKey, err error) {
 }
 
 func NewPublicKeyFromBytes(b []byte) (PK *ecdh.PublicKey, err error) {
-	PK, err = ecdh.P521().NewPublicKey(b)
+	PK, err = ecdh.X25519().NewPublicKey(b)
 	if err != nil {
 		return
 	}
